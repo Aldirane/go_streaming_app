@@ -12,6 +12,7 @@ import (
 
 	"go_app/cache"
 	"go_app/database"
+	"go_app/database/postgres"
 	"go_app/stansub"
 )
 
@@ -49,7 +50,7 @@ func main() {
 		}
 	}(wg)
 	signal.Notify(signalChan, os.Interrupt)
-	orders, err := database.SelectOrders(db)
+	orders, err := postgres.SelectOrders(db)
 	if err != nil {
 		log.Fatal(err)
 	}
