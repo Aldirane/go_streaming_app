@@ -13,11 +13,17 @@ import (
 	"go_app/pkg/cache"
 	"go_app/pkg/database"
 	"go_app/pkg/database/postgres"
+	"go_app/pkg/order"
 	"go_app/pkg/stansub"
 )
 
 var (
-	db                = database.DbConnect()
+	user              = "aldar"
+	password          = "password"
+	dbname            = "aldar"
+	sslmode           = "disable"
+	connStr           = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
+	db                = database.DbConnect(connStr)
 	defaultExpiration = 30 * time.Minute
 	cleanupInterval   = 40 * time.Minute
 	newCache          = cache.New(defaultExpiration, cleanupInterval)
@@ -26,16 +32,23 @@ var (
 
 func listenSub(wg *sync.WaitGroup) {
 	defer wg.Done()
-	for order := range stansub.JsonData {
-		log.Printf("Received new order: ID = %s\n", order.OrderID)
-		newCache.Set(order.OrderID, order, 0)
-		database.InsertOrderAndAll(&order, db)
+	for orderSub := range stansub.JsonData {
+		log.Printf("Received new order: ID = %s\n", orderSub.OrderID)
+		go func(orderSub *order.Order) {
+			newCache.Set(orderSub.OrderID, orderSub, 0)
+			database.InsertOrderAndAll(orderSub, db)
+		}(orderSub)
 	}
 }
 
 // First ctrl+c stopping stan subscription, second command ctrl+c stop server
 
 func main() {
+	orders, err := postgres.SelectOrders(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	newCache.SetAllOrders(orders, 0)
 	wg := new(sync.WaitGroup)
 	sc, sub := stansub.SubStart()
 	wg.Add(1)
@@ -50,11 +63,6 @@ func main() {
 		}
 	}(wg)
 	signal.Notify(signalChan, os.Interrupt)
-	orders, err := postgres.SelectOrders(db)
-	if err != nil {
-		log.Fatal(err)
-	}
-	newCache.SetAllOrders(orders, 0)
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()

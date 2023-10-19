@@ -16,7 +16,7 @@ var (
 	URL                = "nats://0.0.0.0:4222"
 	subject            = "orders"
 	streamCh           = make(chan []byte)
-	JsonData           = make(chan order.Order)
+	JsonData           = make(chan *order.Order)
 	timeSleepToReceive = time.Second * 2
 )
 
@@ -56,9 +56,9 @@ func SubClose(sc stan.Conn, sub stan.Subscription) {
 }
 
 func unmarshalStreamData() {
-	var data order.Order
 	for msg := range streamCh {
-		err := json.Unmarshal(msg, &data)
+		data := new(order.Order)
+		err := json.Unmarshal(msg, data)
 		if err != nil {
 			log.Printf("Wrong data %v\n", err)
 		} else {

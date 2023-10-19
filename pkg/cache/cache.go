@@ -42,7 +42,8 @@ func New(defaultExpiration, cleanupInterval time.Duration) *Cache {
 }
 
 func (c *Cache) Set(key string, value interface{}, duration time.Duration) {
-
+	c.Lock()
+	defer c.Unlock()
 	var expiration int64
 
 	// Если продолжительность жизни равна 0 - используется значение по-умолчанию
@@ -54,11 +55,6 @@ func (c *Cache) Set(key string, value interface{}, duration time.Duration) {
 	if duration > 0 {
 		expiration = time.Now().Add(duration).UnixNano()
 	}
-
-	c.Lock()
-
-	defer c.Unlock()
-
 	c.items[key] = Item{
 		Value:      value,
 		Expiration: expiration,
@@ -68,7 +64,8 @@ func (c *Cache) Set(key string, value interface{}, duration time.Duration) {
 }
 
 func (c *Cache) SetAllOrders(value []*order.Order, duration time.Duration) {
-
+	c.Lock()
+	defer c.Unlock()
 	var expiration int64
 
 	// Если продолжительность жизни равна 0 - используется значение по-умолчанию
@@ -81,10 +78,6 @@ func (c *Cache) SetAllOrders(value []*order.Order, duration time.Duration) {
 		expiration = time.Now().Add(duration).UnixNano()
 	}
 	created := time.Now()
-	c.Lock()
-
-	defer c.Unlock()
-
 	for _, order := range value {
 		c.items[order.OrderID] = Item{
 			Value:      order,
@@ -95,37 +88,27 @@ func (c *Cache) SetAllOrders(value []*order.Order, duration time.Duration) {
 }
 
 func (c *Cache) Get(key string) (interface{}, bool) {
-
 	c.RLock()
-
 	defer c.RUnlock()
-
 	item, found := c.items[key]
-
 	// ключ не найден
 	if !found {
 		return nil, false
 	}
-
 	// Проверка на установку времени истечения, в противном случае он бессрочный
 	if item.Expiration > 0 {
-
 		// Если в момент запроса кеш устарел возвращаем nil
 		if time.Now().UnixNano() > item.Expiration {
 			return nil, false
 		}
-
 	}
-
 	return item.Value, true
 }
 
 func (c *Cache) GetAllOrders() ([]*order.Order, bool) {
 	var orders []*order.Order
 	c.RLock()
-
 	defer c.RUnlock()
-
 	for _, item := range c.items {
 		order, ok := item.Value.(*order.Order)
 		if !ok {
@@ -137,7 +120,6 @@ func (c *Cache) GetAllOrders() ([]*order.Order, bool) {
 			if time.Now().UnixNano() > item.Expiration {
 				continue
 			}
-
 		}
 		orders = append(orders, order)
 	}

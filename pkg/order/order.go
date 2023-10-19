@@ -1,7 +1,6 @@
 package order
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -67,16 +66,6 @@ var (
 	minSize = 1
 	maxSize = 10
 )
-
-func PrintFakeData() {
-	order := GenerateFakeData()
-	data, err := json.MarshalIndent(order, "", "    ")
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Printf("%s\n", data)
-
-}
 
 func GenerateFakeData() *Order {
 	order := new(Order)
