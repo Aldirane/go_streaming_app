@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"go_app/order"
+	"go_app/pkg/order"
 
 	"github.com/nats-io/stan.go"
 )

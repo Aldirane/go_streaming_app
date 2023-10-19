@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"go_app/cache"
-	"go_app/database"
-	"go_app/database/postgres"
-	"go_app/stansub"
+	"go_app/pkg/cache"
+	"go_app/pkg/database"
+	"go_app/pkg/database/postgres"
+	"go_app/pkg/stansub"
 )
 
 var (
