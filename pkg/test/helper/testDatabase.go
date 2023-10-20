@@ -6,20 +6,25 @@ import (
 	"go_app/pkg/database/postgres"
 	"go_app/pkg/order"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-)
-
-var (
-	user     = "aldar"
-	password = "password"
-	dbname   = "aldar"
-	sslmode  = "disable"
-	ConnStr  = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
 )
 
 // Connect to database
 func DatabaseTest() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	var (
+		user     = os.Getenv("DB_USER")
+		password = os.Getenv("DB_PASSWORD")
+		dbname   = os.Getenv("DB_NAME")
+		sslmode  = os.Getenv("SSLMODE")
+		ConnStr  = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
+	)
 	newOrder := order.GenerateFakeData()
 	db := database.DbConnect(ConnStr)
 	defer db.Close()

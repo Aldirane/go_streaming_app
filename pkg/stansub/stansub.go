@@ -4,23 +4,36 @@ import (
 	"encoding/json"
 	"go_app/pkg/order"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/nats-io/stan.go"
 )
 
 var (
-	clusterID          = "test-cluster"
-	clientID           = "client-sub-order"
-	durable            = "client-sub-order"
-	URL                = "nats://0.0.0.0:4222"
-	subject            = "orders"
+	clusterID          string
+	clientID           string
+	durable            string
+	URL                string
+	subject            string
 	streamCh           = make(chan []byte)
 	JsonData           = make(chan *order.Order)
-	timeSleepToReceive = time.Second * 2
+	timeSleepToReceive time.Duration
 )
 
 func SubStart() (stan.Conn, stan.Subscription) {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	clusterID = os.Getenv("CLUSTER_ID")
+	clientID = os.Getenv("CLIENT_SUB_ID")
+	durable = os.Getenv("DURABLE")
+	URL = os.Getenv("URL")
+	subject = os.Getenv("SUBJECT")
+	timeSleepToReceive = ParseDuration()
 	sc, sub := SubscribtionConnect()
 	go unmarshalStreamData()
 	return sc, sub
@@ -66,4 +79,14 @@ func unmarshalStreamData() {
 		}
 		time.Sleep(timeSleepToReceive)
 	}
+}
+
+func ParseDuration() time.Duration {
+	envSubSleep := os.Getenv("SUB_SLEEP")
+	t, err := strconv.Atoi(envSubSleep)
+	if err != nil {
+		log.Fatalln("env variable SUB_SLEEP must be integer")
+	}
+	timeSleep := time.Duration(t * int(time.Second))
+	return timeSleep
 }

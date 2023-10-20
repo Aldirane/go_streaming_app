@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,26 +9,20 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"time"
 
 	"go_app/pkg/cache"
 	"go_app/pkg/database"
 	"go_app/pkg/database/postgres"
 	"go_app/pkg/order"
 	"go_app/pkg/stansub"
+
+	"github.com/joho/godotenv"
 )
 
 var (
-	user              = "aldar"
-	password          = "password"
-	dbname            = "aldar"
-	sslmode           = "disable"
-	connStr           = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
-	db                = database.DbConnect(connStr)
-	defaultExpiration = 30 * time.Minute
-	cleanupInterval   = 40 * time.Minute
-	newCache          = cache.New(defaultExpiration, cleanupInterval)
-	signalChan        = make(chan os.Signal, 1)
+	db         *sql.DB
+	newCache   *cache.Cache
+	signalChan = make(chan os.Signal, 1)
 )
 
 func listenSub(wg *sync.WaitGroup) {
@@ -44,6 +39,20 @@ func listenSub(wg *sync.WaitGroup) {
 // First ctrl+c stopping stan subscription, second command ctrl+c stop server
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	// env variables
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+	sslmode := os.Getenv("SSLMODE")
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
+	db = database.DbConnect(connStr)
+	defaultExpiration, cleanupInterval := cache.ParseCleanupExpiration()
+	newCache = cache.New(defaultExpiration, cleanupInterval)
+
 	orders, err := postgres.SelectOrders(db)
 	if err != nil {
 		log.Fatal(err)
@@ -54,6 +63,7 @@ func main() {
 	wg.Add(1)
 	go listenSub(wg)
 	wg.Add(1)
+	// Ctrl + C gracious exit: stan close and unsubscribe
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
 		for range signalChan {

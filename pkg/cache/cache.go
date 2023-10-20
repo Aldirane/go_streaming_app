@@ -3,11 +3,30 @@ package cache
 import (
 	"errors"
 	"log"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	"go_app/pkg/order"
 )
+
+func ParseCleanupExpiration() (time.Duration, time.Duration) {
+
+	envExpiration := os.Getenv("DEFAULT_EXPIRATION")
+	envCleanupInterval := os.Getenv("CLEANUP_INTERVAL")
+	defaultExp, err := strconv.Atoi(envExpiration)
+	if err != nil {
+		log.Fatal("env variable DEFAULT_EXPIRATION must be integer")
+	}
+	cleanup, err := strconv.Atoi(envCleanupInterval)
+	if err != nil {
+		log.Fatal("env variable CLEANUP_INTERVAL must be integer")
+	}
+	defaultExpiration := time.Duration(defaultExp * int(time.Minute))
+	cleanupInterval := time.Duration(cleanup * int(time.Minute))
+	return defaultExpiration, cleanupInterval
+}
 
 type Cache struct {
 	sync.RWMutex

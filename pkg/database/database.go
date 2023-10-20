@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"go_app/pkg/database/postgres"
 	"go_app/pkg/order"
 	"log"
@@ -10,14 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var (
-	user     = "aldar"
-	password = "password"
-	dbname   = "aldar"
-	sslmode  = "disable"
-)
-
-var ConnStr = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
+// Example ConnStr = fmt.Sprintf("user=%s password=%s dbname=%s sslmode=%s", user, password, dbname, sslmode)
 
 func DbConnect(connStr string) *sql.DB {
 	db, err := sql.Open("postgres", connStr)

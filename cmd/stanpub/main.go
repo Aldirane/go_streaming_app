@@ -3,21 +3,26 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"go_app/pkg/order"
 
+	"github.com/joho/godotenv"
 	"github.com/nats-io/stan.go"
 )
 
 func main() {
-	var (
-		clusterID       = "test-cluster"
-		clientID        = "client-pub"
-		URL             = "nats://0.0.0.0:4222"
-		subject         = "orders"
-		timeSleepToSend = 10 * time.Second
-	)
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	clusterID := os.Getenv("CLUSTER_ID")
+	clientID := os.Getenv("CLIENT_PUB_ID")
+	URL := os.Getenv("URL")
+	subject := os.Getenv("SUBJECT")
+	timeSleepToSend := ParseDuration()
 	sc, err := stan.Connect(clusterID, clientID, stan.NatsURL(URL))
 	if err != nil {
 		log.Fatalf("Can't connect: %v.\nMake sure a NATS Streaming Server is running at: %s", err, URL)
@@ -42,4 +47,14 @@ func main() {
 		log.Printf("Published [%s] : '%d'\n", subject, i)
 		time.Sleep(timeSleepToSend)
 	}
+}
+
+func ParseDuration() time.Duration {
+	envSubSleep := os.Getenv("PUB_SLEEP")
+	t, err := strconv.Atoi(envSubSleep)
+	if err != nil {
+		log.Fatalln("env variable PUB_SLEEP must be integer")
+	}
+	timeSleep := time.Duration(t * int(time.Second))
+	return timeSleep
 }
