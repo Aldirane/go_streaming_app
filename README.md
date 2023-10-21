@@ -16,6 +16,7 @@
     - host:port/order_id?order="order id"  # получить определенный ордер по его id
 
 ## Структура:
+```
 .
 ├── ...
 ├── workdir/
@@ -43,3 +44,4 @@
 │                     ├── testOrder.go # тест пакета workdir/pkg/order
 │                ├── main.go # запуск тестов пакета workdir/pkg/test/helper
 └── ...
+```
