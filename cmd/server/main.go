@@ -95,7 +95,7 @@ func handlerOrders(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Orders not found"))
 			return
 		}
-		templ, err := template.ParseFiles("pkg/templates/orders.html")
+		templ, err := template.ParseFiles("templates/orders.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -122,7 +122,7 @@ func handlerOrderId(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Server couldn't send jsonData"))
 			return
 		}
-		templ, err := template.ParseFiles("pkg/templates/order.html")
+		templ, err := template.ParseFiles("templates/order.html")
 		if err != nil {
 			log.Fatal(err)
 		}
