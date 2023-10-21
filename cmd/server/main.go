@@ -44,6 +44,9 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 	// env variables
+	port := os.Getenv("SERVER_PORT")
+	host := os.Getenv("SERVER_HOST")
+	serverUrl := host + ":" + port
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
@@ -78,7 +81,7 @@ func main() {
 		defer wg.Done()
 		http.HandleFunc("/", handlerOrders)
 		http.HandleFunc("/order_id", handlerOrderId)
-		err = http.ListenAndServe(":5555", nil)
+		err = http.ListenAndServe(serverUrl, nil)
 		if err != nil {
 			fmt.Printf("Server start up failure %v", err)
 			return
