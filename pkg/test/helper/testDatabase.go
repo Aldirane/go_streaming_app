@@ -34,7 +34,7 @@ func DatabaseTest() {
 		log.Fatalln(err)
 	}
 	fmt.Printf("%+v\n", ord)
-	newOrders, err := postgres.SelectOrders(db)
+	newOrders, err := postgres.SelectOrders(db, "", "", 5, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}

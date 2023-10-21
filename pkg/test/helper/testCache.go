@@ -30,6 +30,7 @@ func CacheTest() {
 	fmt.Printf("%+v\n\n", chachedOrder)
 	newCache.SetAllOrders(orders, 0)
 	chachedOrders, _ := newCache.GetAllOrders()
+	cache.SortOrders(chachedOrders)
 	for _, ord := range chachedOrders {
 		fmt.Printf("\n%+v\n", ord)
 	}

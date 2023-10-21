@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -26,6 +27,10 @@ func ParseCleanupExpiration() (time.Duration, time.Duration) {
 	defaultExpiration := time.Duration(defaultExp * int(time.Minute))
 	cleanupInterval := time.Duration(cleanup * int(time.Minute))
 	return defaultExpiration, cleanupInterval
+}
+
+func SortOrders(orders []*order.Order) {
+	sort.SliceStable(orders, func(i, j int) bool { return orders[i].DateCreated > orders[j].DateCreated })
 }
 
 type Cache struct {
@@ -106,7 +111,7 @@ func (c *Cache) SetAllOrders(value []*order.Order, duration time.Duration) {
 	}
 }
 
-func (c *Cache) Get(key string) (interface{}, bool) {
+func (c *Cache) Get(key string) (*order.Order, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	item, found := c.items[key]
@@ -121,7 +126,8 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 			return nil, false
 		}
 	}
-	return item.Value, true
+	order := item.Value.(*order.Order)
+	return order, true
 }
 
 func (c *Cache) GetAllOrders() ([]*order.Order, bool) {
@@ -145,6 +151,7 @@ func (c *Cache) GetAllOrders() ([]*order.Order, bool) {
 	if len(orders) == 0 {
 		return nil, false
 	}
+	SortOrders(orders)
 	return orders, true
 }
 

@@ -7,12 +7,28 @@ import (
 	"log"
 )
 
-func SelectOrders(db *sql.DB) ([]*order.Order, error) {
-	var pass string
-	var newOrders []*order.Order
-	queryStr := `select * from orders 
+func SelectOrders(db *sql.DB, orderBy string, ascDesc string, limit int, offset int) ([]*order.Order, error) {
+	var (
+		limitRows                interface{}
+		RowsOrderBy, RowsAscDesc string
+		pass                     string
+		newOrders                []*order.Order
+	)
+	limitRows = limit
+	if limit == 0 {
+		limitRows = "all"
+	}
+	if orderBy == "" {
+		RowsOrderBy = "date_created"
+	}
+	if ascDesc == "" {
+		RowsAscDesc = "desc"
+	}
+
+	queryStr := fmt.Sprintf(`select * from orders 
 		join delivery on orders.track_number=delivery.track_number 
-		join payment on orders.order_uid=payment.transaction`
+		join payment on orders.order_uid=payment.transaction 
+		order by %s %s limit %v offset %v`, RowsOrderBy, RowsAscDesc, limitRows, offset)
 	queryStmt, err := db.Prepare(queryStr)
 	if err != nil {
 		log.Printf("Wrong query string %v", err)

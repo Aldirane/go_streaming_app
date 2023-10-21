@@ -2,13 +2,13 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
+	"text/template"
 
 	"go_app/pkg/cache"
 	"go_app/pkg/database"
@@ -53,7 +53,7 @@ func main() {
 	defaultExpiration, cleanupInterval := cache.ParseCleanupExpiration()
 	newCache = cache.New(defaultExpiration, cleanupInterval)
 
-	orders, err := postgres.SelectOrders(db)
+	orders, err := postgres.SelectOrders(db, "", "", 20, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -95,34 +95,54 @@ func handlerOrders(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Orders not found"))
 			return
 		}
-		jsonData, err := json.Marshal(orders)
+		templ, err := template.ParseFiles("pkg/templates/orders.html")
 		if err != nil {
-			log.Println(err)
-			w.Write([]byte("Server couldn't send jsonData"))
-			return
+			log.Fatal(err)
 		}
-		w.Write([]byte(jsonData))
+		err = templ.Execute(w, orders)
+		if err != nil {
+			log.Fatal(err)
+		}
 		log.Println("Responded to request: orders")
 	}
 }
 
 func handlerOrderId(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet || r.Method == http.MethodPost {
-		val := r.FormValue("order_id")
-		order, ok := newCache.Get(val)
-		if !ok {
+		val := r.FormValue("order")
+		order, err := getOrder(val)
+		if err != nil {
 			resp := fmt.Sprintf("Order id wrong or not found  %s", val)
 			log.Println(resp)
 			w.Write([]byte(resp))
 			return
 		}
-		jsonData, err := json.Marshal(order)
 		if err != nil {
 			log.Println(err)
 			w.Write([]byte("Server couldn't send jsonData"))
 			return
 		}
-		w.Write([]byte(jsonData))
+		templ, err := template.ParseFiles("pkg/templates/order.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = templ.Execute(w, order)
+		if err != nil {
+			log.Fatal(err)
+		}
 		log.Printf("Responded to request: order_id %s\n", val)
 	}
+}
+
+func getOrder(orderID string) (*order.Order, error) {
+	order, ok := newCache.Get(orderID)
+	if !ok {
+		orderDB, err := postgres.SelectOrder(orderID, db)
+		if err != nil {
+			return nil, err
+		}
+		newCache.Set(orderDB.OrderID, orderDB, 0)
+		return orderDB, nil
+	}
+	return order, nil
 }
