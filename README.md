@@ -2,7 +2,7 @@
     - git clone git@github.com:Aldirane/go_streaming_app.git
 2) Создайте базу данных postgres, подставьте данные для подключения в .env
     - импортируйте таблицы Order, Payment, Delivery, Item. Подставьте ваши данные и путь к файлу:
-    -  psql -h localhost -U user -W -d database_name -f path/to/models.sql
+    -  psql -h localhost -U user -W -d database_name -f go_streaming_app/pkg/database/models.sql
 2) Запустите nats streaming server:
     - go run github.com/nats-io/nats-streaming-server
 3) Запустите stan publisher для публикаций:
