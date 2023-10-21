@@ -117,11 +117,6 @@ func handlerOrderId(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(resp))
 			return
 		}
-		if err != nil {
-			log.Println(err)
-			w.Write([]byte("Server couldn't send jsonData"))
-			return
-		}
 		templ, err := template.ParseFiles("templates/order.html")
 		if err != nil {
 			log.Fatal(err)
