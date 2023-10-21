@@ -76,7 +76,7 @@ func main() {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		http.HandleFunc("/orders", handlerOrders)
+		http.HandleFunc("/", handlerOrders)
 		http.HandleFunc("/order_id", handlerOrderId)
 		err = http.ListenAndServe(":5555", nil)
 		if err != nil {
@@ -89,13 +89,13 @@ func main() {
 
 func handlerOrders(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		orders, ok := newCache.GetAllOrders()
-		if !ok {
-			log.Println("Orders not found")
+		orders, err := getOrders()
+		if err != nil {
+			log.Println(err)
 			w.Write([]byte("Orders not found"))
 			return
 		}
-		templ, err := template.ParseFiles("templates/orders.html")
+		templ, err := template.ParseFiles("templates/index.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -145,4 +145,17 @@ func getOrder(orderID string) (*order.Order, error) {
 		return orderDB, nil
 	}
 	return order, nil
+}
+
+func getOrders() ([]*order.Order, error) {
+	orders, ok := newCache.GetAllOrders()
+	if !ok {
+		ordersDB, err := postgres.SelectOrders(db, "", "", 0, 0)
+		if err != nil {
+			return nil, err
+		}
+		newCache.SetAllOrders(ordersDB, 0)
+		return ordersDB, nil
+	}
+	return orders, nil
 }
